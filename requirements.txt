@@ -3,3 +3,4 @@ pyserial
 flask-socketio
 flask-cors
 dotenv
+gevent
