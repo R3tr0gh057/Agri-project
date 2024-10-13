@@ -1,0 +1,5 @@
+flask
+pyserial
+flask-socketio
+flask-cors
+dotenv
