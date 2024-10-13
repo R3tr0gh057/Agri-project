@@ -1,0 +1,2 @@
+DHT sensor library (by adafruit)
+WIFI library should be available by default if you configured esp32 by adding the espressif library link to the additonal boards manager section in preferences. Same goes with the HTTPclient library.
