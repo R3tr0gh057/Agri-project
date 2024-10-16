@@ -1,4 +1,3 @@
-Here's a sample README for the repository based on its content:
 
 ---
 
