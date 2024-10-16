@@ -57,7 +57,7 @@ def read_serial_data():
 
         time.sleep(1)  # Delay for reading
 
-# Convert base64 image string to a PIL image
+# Decode base64 to a PIL Image
 def base64_to_image(base64_str):
     decoded_image = base64.b64decode(base64_str)
     img = Image.open(io.BytesIO(decoded_image))
@@ -84,10 +84,10 @@ def predict():
         return jsonify({'error': 'No image provided'}), 400
 
     try:
-        # Convert base64 string to PIL Image
+        # Decode base64 to image
         img = base64_to_image(data['image'])
         
-        # Get the prediction using the imported function
+        # Use imported predict function
         predicted_class = predict_image(img)
 
         return jsonify({'predicted_class': predicted_class})
