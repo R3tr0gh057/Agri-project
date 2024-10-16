@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 import serial
 import os
@@ -8,6 +8,10 @@ import threading
 from flask_cors import CORS
 from dotenv import load_dotenv
 import sys
+from PIL import Image
+import base64
+import io
+from model_utils import predict_image
 
 # Load environment variables from .env file
 load_dotenv()
@@ -53,6 +57,12 @@ def read_serial_data():
 
         time.sleep(1)  # Delay for reading
 
+# Convert base64 image string to a PIL image
+def base64_to_image(base64_str):
+    decoded_image = base64.b64decode(base64_str)
+    img = Image.open(io.BytesIO(decoded_image))
+    return img
+
 # Route for main page
 @app.route('/')
 def index():
@@ -64,6 +74,26 @@ def startthreads():
     serial_thread = threading.Thread(target=read_serial_data)
     serial_thread.start()
     return jsonify({'status': 'thread started'})
+
+# Flask route for predictions
+@app.route('/predict', methods=['POST'])
+def predict():
+    data = request.get_json()
+
+    if 'image' not in data:
+        return jsonify({'error': 'No image provided'}), 400
+
+    try:
+        # Convert base64 string to PIL Image
+        img = base64_to_image(data['image'])
+        
+        # Get the prediction using the imported function
+        predicted_class = predict_image(img)
+
+        return jsonify({'predicted_class': predicted_class})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Start the serial reading in a separate thread
 if __name__ == '__main__':

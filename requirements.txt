@@ -2,5 +2,8 @@ flask
 pyserial
 flask-socketio
 flask-cors
-dotenv
+python-dotenv
 gevent
+torch
+huggingface_hub
+pillow
