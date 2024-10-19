@@ -1,9 +1,11 @@
+Updated esp32 code:
+
 #include "DHT.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* ssid = "todo";
-const char* password = "todotodo";
+const char* ssid = "<ssid>";
+const char* password = "<pass>";
 
 const char* serverName = "https://sugoi-api.vercel.app/agri/update";
 
@@ -42,19 +44,19 @@ void loop() {
     Serial.print(humidity);
     Serial.println(" %");
 
-    //  if (WiFi.status() == WL_CONNECTED) {
-    //     HTTPClient http;
-    //     http.begin(serverName);
-    //     http.addHeader("Content-Type", "application/json");
+     if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(serverName);
+        http.addHeader("Content-Type", "application/json");
 
-    //     String jsonData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + ",\"soil_moisture\":" + String(soil_moisture) + "}";
-    //     int httpResponseCode = http.POST(jsonData);
+        String jsonData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + ",\"soil_moisture\":" + String(soil_moisture) + "}";
+        int httpResponseCode = http.POST(jsonData);
 
-    //     http.end();
-    // } else {
-    //     Serial.println("Error in WiFi connection");
-    // }
+        http.end();
+    } else {
+        Serial.println("Error in WiFi connection");
+    }
 
 
-    delay(1000);
+    delay(10000);
 }
