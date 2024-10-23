@@ -17,7 +17,7 @@ warnings.filterwarnings(
 
 # Load the model with custom weights
 def load_model():
-    model_path = hf_hub_download(repo_id="someoneskilled/kheeramodel_v1", filename="plant_disease_classifier (1).pth")
+    model_path = hf_hub_download(repo_id="someoneskilled/kheeramodel_v2", filename="plant_disease_classifier_v2.pth")
     model = AutoModelForImageClassification.from_pretrained(
         'microsoft/resnet-50', num_labels=4, ignore_mismatched_sizes=True
     )
