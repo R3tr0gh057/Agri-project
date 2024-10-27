@@ -1,138 +1,84 @@
-#include <HardwareSerial.h>
-#include <Wire.h>
+#include <ModbusMaster.h>
 
-// RE and DE Pins set the RS485 module to Receiver or Transmitter mode
-#define RE 4    // GPIO for Receiver Enable (Active LOW)
-#define DE 5    // GPIO for Driver Enable (Active HIGH)
+#define MAX485_DE      32
+#define MAX485_RE_NEG  33
+
+#define RXD2 16
+#define TXD2 17
 
 // Modbus RTU requests for reading NPK values
-const byte nitro[] = {0x01, 0x03, 0x00, 0x1e, 0x00, 0x01, 0xe4, 0x0c};
-const byte phos[] = {0x01, 0x03, 0x00, 0x1f, 0x00, 0x01, 0xb5, 0xcc};
-const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xc0};
+const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
+const byte phos[] = {0x01, 0x03, 0x00, 0x1F, 0x00, 0x01, 0xB5, 0xCC};
+const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
 
-// A variable used to store NPK values, using RX2 and TX2
-byte values[11];
-
-// Use Hardware Serial (Serial1 or Serial2) for RS485 communication
-HardwareSerial mod(2);  // Using UART2 (TX2=GPIO 17, RX2=GPIO 16)
+// Buffer to store response from sensor
+byte values[7];
 
 void setup() {
-  // Set the baud rate for the main Serial port (USB)
   Serial.begin(9600);
+  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
 
-  // Set the baud rate and GPIO pins for the RS485 communication
-  mod.begin(9600, SERIAL_8N1, 16, 17);  // UART2, TX2=GPIO 17, RX2=GPIO 16
-
-  // Define pin modes for RE and DE
-  pinMode(RE, OUTPUT);
-  pinMode(DE, OUTPUT);
-
-  // Set initial state to receiver mode
-  digitalWrite(DE, LOW);
-  digitalWrite(RE, LOW);
-
-  delay(500);
+  pinMode(MAX485_RE_NEG, OUTPUT);
+  pinMode(MAX485_DE, OUTPUT);
+  digitalWrite(MAX485_RE_NEG, LOW);
+  digitalWrite(MAX485_DE, LOW);
 }
 
 void loop() {
-  // Read values
-  byte val1, val2, val3;
-  val1 = nitrogen();
-  delay(250);
-  val2 = phosphorous();
-  delay(250);
-  val3 = potassium();
-  delay(250);
-
-  // Print values to the serial monitor
+  // Read Nitrogen (N)
+  int nitrogenValue = readSensor(nitro);
   Serial.print("Nitrogen: ");
-  Serial.print(val1);
+  Serial.print(nitrogenValue);
   Serial.println(" mg/kg");
-  Serial.print("Phosphorous: ");
-  Serial.print(val2);
+
+  delay(250);
+
+  // Read Phosphorus (P)
+  int phosphorusValue = readSensor(phos);
+  Serial.print("Phosphorus: ");
+  Serial.print(phosphorusValue);
   Serial.println(" mg/kg");
+
+  delay(250);
+
+  // Read Potassium (K)
+  int potassiumValue = readSensor(pota);
   Serial.print("Potassium: ");
-  Serial.print(val3);
+  Serial.print(potassiumValue);
   Serial.println(" mg/kg");
 
-  delay(2000);
+  Serial.println("\n\n\n");
+
+  delay(2000);  // Delay before next cycle
 }
 
-// Decipher data from the npk sensor
-byte nitrogen() {
-  // Set RS485 module to transmit mode
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
-  delay(10);
+int readSensor(const byte *command) {
+  // Set RS485 to transmit mode
+  digitalWrite(MAX485_RE_NEG, HIGH);
+  digitalWrite(MAX485_DE, HIGH);
 
-  // Send the request for nitrogen data
-  if (mod.write(nitro, sizeof(nitro)) == 8) {
-    // Switch to receive mode
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    delay(10);
+  // Send command to sensor
+  Serial2.write(command, 8);
+  Serial2.flush();
 
-    // Read the response
-    for (byte i = 0; i < 7; i++) {
-      if (mod.available()) {
-        values[i] = mod.read();
-        Serial.print(values[i], HEX);
-        Serial.print(" ");
-      }
-    }
-    Serial.println();
+  // Set RS485 to receive mode
+  digitalWrite(MAX485_RE_NEG, LOW);
+  digitalWrite(MAX485_DE, LOW);
+
+  // Wait for response
+  delay(20);
+
+  int bytesRead = 0;
+  while (Serial2.available() && bytesRead < 7) {
+    values[bytesRead++] = Serial2.read();
   }
-  return values[4];  // Return the nitrogen value
-}
 
-byte phosphorous() {
-  // Set RS485 module to transmit mode
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
-  delay(10);
-
-  // Send the request for phosphorous data
-  if (mod.write(phos, sizeof(phos)) == 8) {
-    // Switch to receive mode
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    delay(10);
-
-    // Read the response
-    for (byte i = 0; i < 7; i++) {
-      if (mod.available()) {
-        values[i] = mod.read();
-        Serial.print(values[i], HEX);
-        Serial.print(" ");
-      }
-    }
-    Serial.println();
+  // Verify if we received a valid response
+  if (bytesRead == 7) {
+    // The nutrient value is typically in the 4th byte for Modbus responses
+    return (int)values[4];
+  } else {
+    Serial.println("Failed to read sensor data");
+    return -1;  // Indicate error
   }
-  return values[4];  // Return the phosphorous value
-}
-
-byte potassium() {
-  // Set RS485 module to transmit mode
-  digitalWrite(DE, HIGH);
-  digitalWrite(RE, HIGH);
-  delay(10);
-
-  // Send the request for potassium data
-  if (mod.write(pota, sizeof(pota)) == 8) {
-    // Switch to receive mode
-    digitalWrite(DE, LOW);
-    digitalWrite(RE, LOW);
-    delay(10);
-
-    // Read the response
-    for (byte i = 0; i < 7; i++) {
-      if (mod.available()) {
-        values[i] = mod.read();
-        Serial.print(values[i], HEX);
-        Serial.print(" ");
-      }
-    }
-    Serial.println();
-  }
-  return values[4];  // Return the potassium value
 }
