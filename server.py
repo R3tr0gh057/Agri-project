@@ -30,6 +30,9 @@ CORS(app)
 pattern = r"Temperature:\s*([\d.]+)\s*°C,\s*Humidity:\s*([\d.]+)\s*%"
 temperature = 0
 humidity = 0
+nitrogen = 0
+phosphorus = 0
+potassium = 0
 
 # # Initialize serial connection
 # try:
@@ -122,11 +125,36 @@ def update_data():
         print(f"Exception occured: {e}")
         return jsonify({'error': str(e)}), 500
     
+
+@app.route('/update-npk', methods=['POST'])
+def update_npk_data():
+    data = request.get_json()
+
+    if 'Nitrogen' not in data or 'Phosphorus' not in data or 'Potassium' not in data:
+        return jsonify({'error': 'Missing values in the json received'}), 400
+    
+    try:
+        global nitrogen, phosphorus, potassium
+        nitrogen = data['Nitrogen']
+        phosphorus = data['Phosphorus']
+        potassium = data['Potassium']
+
+        # Emit data to frontend
+        socketio.emit('change-detected', {'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
+
+        print(f"New data received and emitted, nitogen: {nitrogen}, phosphorus: {phosphorus}, potassium: {potassium}")
+        return jsonify({'status': 'data received'}), 200
+    
+    except Exception as e:
+        print(f"Exception occured: {e}")
+        return jsonify({'error': str(e)}), 500
+    
+    
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     # Fetch data from global variables
-    global temperature, humidity
-    return jsonify({'temperature': temperature, 'humidity': humidity})
+    global temperature, humidity, nitrogen, phosphorus, potassium
+    return jsonify({'temperature': temperature, 'humidity': humidity, 'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
     
 # Start the serial reading in a separate thread
 if __name__ == '__main__':

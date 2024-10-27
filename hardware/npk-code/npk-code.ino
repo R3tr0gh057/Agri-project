@@ -1,10 +1,19 @@
 #include <ModbusMaster.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
 #define MAX485_DE      32
 #define MAX485_RE_NEG  33
 
 #define RXD2 16
 #define TXD2 17
+
+// WiFi credentials
+const char* ssid = "todo";
+const char* password = "todotodo";
+
+// API endpoint for sending NPK values to the server
+const char* serverName = "https://bulldog-promoted-accurately.ngrok-free.app/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
@@ -17,6 +26,14 @@ byte values[7];
 void setup() {
   Serial.begin(9600);
   Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
+
+  WiFi.begin(ssid, password); 
+  Serial.println("Connecting to WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {  
+      delay(1000);
+      Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
 
   pinMode(MAX485_RE_NEG, OUTPUT);
   pinMode(MAX485_DE, OUTPUT);
@@ -48,6 +65,20 @@ void loop() {
   Serial.println(" mg/kg");
 
   Serial.println("\n\n\n");
+
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverName);
+    http.addHeader("Content-Type", "application/json");
+
+    String jsonData = "{\"Nitrogen\":" + String(nitrogenValue) + ",\"Phosphorus\":" + String(phosphorusValue) + ",\"Potassium\":" + String(potassiumValue) + "}";
+    int httpResponseCode = http.POST(jsonData);
+    http.end();
+  } 
+  
+  else {
+    Serial.println("Error in WiFi connection");
+  }
 
   delay(2000);  // Delay before next cycle
 }
