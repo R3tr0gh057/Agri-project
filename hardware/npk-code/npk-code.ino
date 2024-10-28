@@ -9,12 +9,9 @@
 #define RXD2 16
 #define TXD2 17
 
-// WiFi credentials
-const char* ssid = "todo";
-const char* password = "todotodo";
-
-// API endpoint for sending NPK values to the server
-const char* serverName = "http://192.168.193.99:80/update-npk";
+const char* ssid = "Yamete";
+const char* password = "Todotodo";
+const char* serverName = "http://192.168.0.110:80/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
