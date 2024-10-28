@@ -1,35 +1,69 @@
 #include "DHT.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WebServer.h>
 
-const char* ssid = "<ssid>";
-const char* password = "<pass>";
+// #define DHTPIN 4      // Pin where DHT11 is connected
+// #define DHTTYPE DHT11 
 
-const char* serverName = "https://sugoi-api.vercel.app/agri/update";
+const char* ssid = "Yamete";
+const char* password = "Todotodo";
+const char* serverName = "http://192.168.0.110:80/update-data";
 
-#define DHTPIN 4      // Pin where DHT11 is connected
-#define DHTTYPE DHT11 
+WebServer server(3000);
+// DHT dht(DHTPIN, DHTTYPE);
 
-DHT dht(DHTPIN, DHTTYPE);
+int LED = 13;
 
 void setup() {
-    Serial.begin(115200);  
-    WiFi.begin(ssid, password); 
+  pinMode(LED, OUTPUT);
+  digitalWrite(LED, HIGH);
+  
+  Serial.begin(115200);
 
-    while (WiFi.status() != WL_CONNECTED) {  
-        delay(1000);
-        Serial.println("Connecting to WiFi...");
+  WiFi.begin(ssid, password);
+  Serial.println("Connecting to WiFi...");
+  while (WiFi.status() != WL_CONNECTED) {
+      delay(1000);
+      Serial.print(".");
+  }
+  Serial.println("Connected to WiFi");
+  Serial.println("IP: ");
+  Serial.print(WiFi.localIP());
+  // dht.begin(); 
+
+  server.on("/toggle-led", HTTP_GET, []() {
+      digitalWrite(LED, !digitalRead(LED));
+      if (digitalRead(LED) == LOW){
+        server.send(200, "text/plain", "on");
+      }
+      else{
+        server.send(200, "text/plain", "off");
+      }
+  });
+
+  // Add CORS headers for all requests
+  server.onNotFound([](){
+    if (server.method() == HTTP_OPTIONS) {
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.sendHeader("Access-Control-Max-Age", "10000");
+      server.sendHeader("Access-Control-Allow-Methods", "PUT,POST,GET,OPTIONS");
+      server.sendHeader("Access-Control-Allow-Headers", "*");
+      server.send(204);
+    } else {
+      server.send(404, "text/plain", "Not Found");
     }
-    Serial.println("Connected to WiFi");
+  });
 
-    dht.begin(); 
+  server.begin();
 }
 
 void loop() {
-    delay(2000); 
-    float temperature = dht.readTemperature(); 
-    float humidity = dht.readHumidity();
-    float soil_moisture = 0;
+    server.handleClient();
+
+    float temperature = 21; //dht.readTemperature(); 
+    float humidity = 73; //dht.readHumidity();
+    float soil_moisture = 55;
 
     if (isnan(temperature) || isnan(humidity)) { 
         Serial.println("Failed to read from DHT sensor!");
@@ -55,6 +89,5 @@ void loop() {
         Serial.println("Error in WiFi connection");
     }
 
-
-    delay(10000);
+    delay(1000);
 }

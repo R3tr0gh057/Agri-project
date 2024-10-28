@@ -1,6 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
 import os
+import requests
 from flask_cors import CORS
 from dotenv import load_dotenv
 import sys
@@ -26,6 +27,7 @@ CORS(app)
 pattern = r"Temperature:\s*([\d.]+)\s*°C,\s*Humidity:\s*([\d.]+)\s*%"
 temperature = 0
 humidity = 0
+moisture = 0
 nitrogen = 0
 phosphorus = 0
 potassium = 0
@@ -107,14 +109,30 @@ def update_data():
         return jsonify({'error': 'No temperature or humidity provided'}), 400
     
     try:
-        global temperature, humidity
+        global temperature, humidity, moisture
         temperature = data['temperature']
         humidity = data['humidity']
+        moisture = data['soil_moisture']
+        
 
         # Emit data to frontend
-        socketio.emit('change-detected', {'new_temp': temperature, 'new_hum': humidity})
+        socketio.emit('change-detected', {'new_temp': temperature, 'new_hum': humidity, 'new_moist': moisture})
+        
+        url = 'https://sugoi-api.vercel.app/agri/update'
+        
+        # Data to send in the POST request
+        data = {
+            "temperature":temperature,
+            "humidity":humidity,
+            "soil_moisture":moisture
+        }
 
-        print(f"New data received and emitted, temp: {temperature} hum: {humidity}")
+        # Send the POST request
+        response = requests.post(url, json=data)
+        # Check the response
+        print(response.status_code)
+
+        print(f"New data received and emitted, temp: {temperature} hum: {humidity}, moist: {moisture}")
         return jsonify({'status': 'data received'}), 200
     
     except Exception as e:
@@ -149,8 +167,8 @@ def update_npk_data():
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     # Fetch data from global variables
-    global temperature, humidity, nitrogen, phosphorus, potassium
-    return jsonify({'temperature': temperature, 'humidity': humidity, 'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
+    global temperature, humidity, moisture, nitrogen, phosphorus, potassium
+    return jsonify({'temperature': temperature, 'humidity': humidity, 'moisture': moisture, 'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
     
 # Start the serial reading in a separate thread
 if __name__ == '__main__':
