@@ -9,9 +9,13 @@
 #define RXD2 16
 #define TXD2 17
 
+// #define DHTPIN 4      // Pin where DHT11 is connected
+// #define DHTTYPE DHT11 
+
 const char* ssid = "Yamete";
 const char* password = "Todotodo";
-const char* serverName = "http://192.168.0.110:80/update-npk";
+const char* tempServer = "http://192.168.0.110:80/update-data";
+const char* npkServer = "http://192.168.0.110:80/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
@@ -20,6 +24,7 @@ const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
 
 // Buffer to store response from sensor
 byte values[7];
+// DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
@@ -33,6 +38,8 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
+  // dht.begin(); 
+
   pinMode(MAX485_RE_NEG, OUTPUT);
   pinMode(MAX485_DE, OUTPUT);
   digitalWrite(MAX485_RE_NEG, LOW);
@@ -40,6 +47,7 @@ void setup() {
 }
 
 void loop() {
+
   // Read Nitrogen (N)
   int nitrogenValue = readSensor(nitro);
   Serial.print("Nitrogen: ");
@@ -61,15 +69,19 @@ void loop() {
   Serial.print("Potassium: ");
   Serial.print(potassiumValue);
   Serial.println(" mg/kg");
-
   Serial.println("\n\n\n");
+
+  delay(250);
+
+  // Send the temperature and humidity data
+  dth_read();
 
   delay(2000);  // Delay before next cycle
 
   // Check WiFi connection before sending data
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
-    http.begin(serverName);
+    http.begin(npkServer);
     http.addHeader("Content-Type", "application/json");
 
     String jsonData = "{\"Nitrogen\":" + String(nitrogenValue) + ",\"Phosphorus\":" + String(phosphorusValue) + ",\"Potassium\":" + String(potassiumValue) + "}";
@@ -82,10 +94,10 @@ void loop() {
       String response = http.getString();  // Get response from server
       Serial.print("HTTP Response code: ");
       Serial.println(httpResponseCode);
-      Serial.println("Response from server:");
+      Serial.println("Response from the npk server:");
       Serial.println(response);
     } else {
-      Serial.print("Error on sending POST: ");
+      Serial.print("Error on sending POST to the npk server: ");
       Serial.println(httpResponseCode);
     }
     delay(2000);
@@ -123,5 +135,37 @@ int readSensor(const byte *command) {
   } else {
     Serial.println("Failed to read sensor data");
     return -1;  // Indicate error
+  }
+}
+
+void dth_read() {
+  float temperature = 21; //dht.readTemperature(); 
+  float humidity = 73; //dht.readHumidity();
+  float soil_moisture = 55;
+
+  if (isnan(temperature) || isnan(humidity)) { 
+      Serial.println("Failed to read from DHT sensor!");
+      return;
+  }
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.print(" °C, Humidity: ");
+  Serial.print(humidity);
+  Serial.println(" %");
+
+   if (WiFi.status() == WL_CONNECTED) {
+      HTTPClient http;
+      http.begin(tempServer);
+      http.addHeader("Content-Type", "application/json");
+
+      String jsonData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + ",\"soil_moisture\":" + String(soil_moisture) + "}";
+      int httpResponseCode = http.POST(jsonData);
+      Serial.print("Status of temperature endpoint: ");
+      Serial.println(httpResponseCode);
+
+      http.end();
+  } else {
+      Serial.println("Error in WiFi connection");
   }
 }
