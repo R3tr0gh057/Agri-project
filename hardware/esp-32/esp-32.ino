@@ -1,25 +1,17 @@
-#include "DHT.h"
 #include <WiFi.h>
-#include <HTTPClient.h>
 #include <WebServer.h>
-
-// #define DHTPIN 4      // Pin where DHT11 is connected
-// #define DHTTYPE DHT11 
 
 const char* ssid = "Yamete";
 const char* password = "Todotodo";
-const char* serverName = "http://192.168.0.110:80/update-data";
 
 WebServer server(3000);
-// DHT dht(DHTPIN, DHTTYPE);
-
 int LED = 13;
 
 void setup() {
   pinMode(LED, OUTPUT);
   digitalWrite(LED, HIGH);
   
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi...");
@@ -27,18 +19,23 @@ void setup() {
       delay(1000);
       Serial.print(".");
   }
-  Serial.println("Connected to WiFi");
-  Serial.println("IP: ");
-  Serial.print(WiFi.localIP());
-  // dht.begin(); 
+  Serial.println("\nConnected to WiFi");
+  Serial.print("ESP32 IP Address: ");
+  Serial.println(WiFi.localIP());
 
+  // Basic route for testing connectivity
+  server.on("/", HTTP_GET, []() {
+      server.send(200, "text/plain", "ESP32 server is up and running");
+  });
+
+  // Toggle LED route
   server.on("/toggle-led", HTTP_GET, []() {
       digitalWrite(LED, !digitalRead(LED));
       if (digitalRead(LED) == LOW){
-        server.send(200, "text/plain", "on");
+        server.send(200, "text/plain", "LED is ON");
       }
       else{
-        server.send(200, "text/plain", "off");
+        server.send(200, "text/plain", "LED is OFF");
       }
   });
 
@@ -60,34 +57,4 @@ void setup() {
 
 void loop() {
     server.handleClient();
-
-    float temperature = 21; //dht.readTemperature(); 
-    float humidity = 73; //dht.readHumidity();
-    float soil_moisture = 55;
-
-    if (isnan(temperature) || isnan(humidity)) { 
-        Serial.println("Failed to read from DHT sensor!");
-        return;
-    }
-
-    Serial.print("Temperature: ");
-    Serial.print(temperature);
-    Serial.print(" °C, Humidity: ");
-    Serial.print(humidity);
-    Serial.println(" %");
-
-     if (WiFi.status() == WL_CONNECTED) {
-        HTTPClient http;
-        http.begin(serverName);
-        http.addHeader("Content-Type", "application/json");
-
-        String jsonData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + ",\"soil_moisture\":" + String(soil_moisture) + "}";
-        int httpResponseCode = http.POST(jsonData);
-
-        http.end();
-    } else {
-        Serial.println("Error in WiFi connection");
-    }
-
-    delay(1000);
 }
