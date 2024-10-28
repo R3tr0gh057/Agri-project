@@ -1,6 +1,7 @@
 #include <ModbusMaster.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
 #define MAX485_DE      32
 #define MAX485_RE_NEG  33
@@ -13,7 +14,7 @@ const char* ssid = "todo";
 const char* password = "todotodo";
 
 // API endpoint for sending NPK values to the server
-const char* serverName = "https://bulldog-promoted-accurately.ngrok-free.app/update-npk";
+const char* serverName = "http://192.168.193.99:80/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
@@ -66,21 +67,35 @@ void loop() {
 
   Serial.println("\n\n\n");
 
+  delay(2000);  // Delay before next cycle
+
+  // Check WiFi connection before sending data
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     http.begin(serverName);
     http.addHeader("Content-Type", "application/json");
 
     String jsonData = "{\"Nitrogen\":" + String(nitrogenValue) + ",\"Phosphorus\":" + String(phosphorusValue) + ",\"Potassium\":" + String(potassiumValue) + "}";
+    Serial.println("Sending JSON payload:");
+    Serial.println(jsonData);
+
     int httpResponseCode = http.POST(jsonData);
-    http.end();
-  } 
-  
-  else {
+
+    if (httpResponseCode > 0) {
+      String response = http.getString();  // Get response from server
+      Serial.print("HTTP Response code: ");
+      Serial.println(httpResponseCode);
+      Serial.println("Response from server:");
+      Serial.println(response);
+    } else {
+      Serial.print("Error on sending POST: ");
+      Serial.println(httpResponseCode);
+    }
+    delay(2000);
+    http.end();  // End the HTTP connection
+  } else {
     Serial.println("Error in WiFi connection");
   }
-
-  delay(2000);  // Delay before next cycle
 }
 
 int readSensor(const byte *command) {

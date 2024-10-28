@@ -1,10 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 from flask_socketio import SocketIO
-import serial
 import os
-import re
-import time
-import threading
 from flask_cors import CORS
 from dotenv import load_dotenv
 import sys
