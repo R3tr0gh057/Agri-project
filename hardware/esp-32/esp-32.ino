@@ -1,5 +1,3 @@
-Updated esp32 code:
-
 #include "DHT.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
