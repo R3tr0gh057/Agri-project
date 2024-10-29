@@ -169,6 +169,24 @@ def fetch_data():
     # Fetch data from global variables
     global temperature, humidity, moisture, nitrogen, phosphorus, potassium
     return jsonify({'temperature': temperature, 'humidity': humidity, 'moisture': moisture, 'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
+
+@app.route('/toggleLED', methods=['GET'])
+def toggleLED():
+    # Define the LED toggle URL
+    url = 'http://192.168.193.217:80/toggle-led'
+    
+    try:
+        # Send request to toggle LED
+        response = requests.get(url)
+        response.raise_for_status()  # Raises an error for bad responses (4xx or 5xx)
+        
+        # Log and return success message
+        print(f"Response from toggling LED: {response.status_code}")
+        return jsonify({'status': 'LED toggled successfully'}), 200
+    except requests.exceptions.RequestException as e:
+        # Log and return error message
+        print(f"Error toggling LED: {e}")
+        return jsonify({'status': 'Error toggling LED', 'error': str(e)}), 500
     
 # Start the serial reading in a separate thread
 if __name__ == '__main__':

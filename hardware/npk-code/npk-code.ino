@@ -14,8 +14,8 @@
 
 const char* ssid = "Todo";
 const char* password = "Todotodo";
-const char* tempServer = "http://192.168.193.131:80/update-data";
-const char* npkServer = "http://192.168.193.131:80/update-npk";
+const char* tempServer = "http://192.168.193.245:80/update-data";
+const char* npkServer = "http://192.168.193.245:80/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
