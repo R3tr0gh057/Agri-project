@@ -8,3 +8,4 @@ torch
 huggingface_hub
 pillow
 transformers
+openai

@@ -8,7 +8,7 @@ import sys
 from PIL import Image
 import base64
 import io
-from model_utils import predict_image
+from lib.model_utils import predict_image
 
 # Load environment variables from .env file
 load_dotenv()
