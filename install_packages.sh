@@ -16,7 +16,7 @@ source my_project_env/bin/activate
 
 # Install other Python packages within the virtual environment
 echo "Installing Python packages with pip..."
-pip install pyserial flask-socketio flask-cors python-dotenv gevent torch torchvision huggingface_hub pillow transformers
+pip install pyserial flask-socketio flask-cors python-dotenv gevent torch torchvision huggingface_hub pillow transformers ngrok
 
 # Inform the user
 echo "All packages installed successfully in the virtual environment 'my_project_env'!"
