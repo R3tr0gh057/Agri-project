@@ -133,24 +133,6 @@ def update_data():
             'new_nitrogen': nitrogen
         })
 
-        # URL to send the POST request
-        url = 'https://sugoi-api.vercel.app/agri/update'
-
-        # Data to send in the POST request
-        data_to_send = {
-            "temperature": temperature,
-            "humidity": humidity,
-            "soil_moisture": moisture,
-            "potassium": potassium,
-            "phosphorus": phosphorus,
-            "nitrogen": nitrogen
-        }
-
-        # Send the POST request
-        response = requests.post(url, json=data_to_send)
-
-        # Check the response
-        print(f"Response status code: {response.status_code}")
         print(f"New data received and emitted, temp: {temperature}, hum: {humidity}, moist: {moisture}, potassium: {potassium}, phosphorus: {phosphorus}, nitrogen: {nitrogen}")
 
         return jsonify({'status': 'data received'}), 200

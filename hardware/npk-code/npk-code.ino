@@ -16,7 +16,7 @@
 const char* ssid = "Todo";
 const char* password = "Todotodo";
 const char* tempServer = "http://192.168.193.55:5000/update-data";
-const char* npkServer = "http://192.168.193.55:5000/update-npk";
+const char* sugoi = "https://sugoi-api.vercel.app/agri/update";
 
 int nitrogenValue = 0;
 int phosphorusValue = 0;
@@ -93,7 +93,7 @@ void loop() {
                   ",\"phosphorus\":" + String(phosphorusValue) +
                   ",\"nitrogen\":" + String(nitrogenValue) + "}";
 
-  sendData(tempServer, jsonData);
+  sendData(sugoi, jsonData);
 
   delay(2000);  // Delay before next cycle
 
