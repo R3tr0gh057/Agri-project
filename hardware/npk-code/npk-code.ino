@@ -1,5 +1,6 @@
 #include <ModbusMaster.h>
 #include <WiFi.h>
+#include "DHT.h"
 #include <HTTPClient.h>
 #include <WiFiClientSecure.h>
 
@@ -9,13 +10,13 @@
 #define RXD2 16
 #define TXD2 17
 
-// #define DHTPIN 4      // Pin where DHT11 is connected
-// #define DHTTYPE DHT11 
+#define DHTPIN 4      // Pin where DHT11 is connected
+#define DHTTYPE DHT11 
 
 const char* ssid = "Todo";
 const char* password = "Todotodo";
-const char* tempServer = "http://192.168.193.55:80/update-data";
-const char* npkServer = "http://192.168.193.55:80/update-npk";
+const char* tempServer = "http://192.168.193.55:5000/update-data";
+const char* npkServer = "http://192.168.193.55:5000/update-npk";
 
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
@@ -24,7 +25,7 @@ const byte pota[] = {0x01, 0x03, 0x00, 0x20, 0x00, 0x01, 0x85, 0xC0};
 
 // Buffer to store response from sensor
 byte values[7];
-// DHT dht(DHTPIN, DHTTYPE);
+DHT dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(9600);
@@ -38,7 +39,7 @@ void setup() {
   }
   Serial.println("Connected to WiFi");
 
-  // dht.begin(); 
+  dht.begin(); 
 
   pinMode(MAX485_RE_NEG, OUTPUT);
   pinMode(MAX485_DE, OUTPUT);
@@ -139,8 +140,8 @@ int readSensor(const byte *command) {
 }
 
 void dth_read() {
-  float temperature = 21; //dht.readTemperature(); 
-  float humidity = 73; //dht.readHumidity();
+  float temperature = dht.readTemperature(); 
+  float humidity = dht.readHumidity();
   float soil_moisture = 55;
 
   if (isnan(temperature) || isnan(humidity)) { 
