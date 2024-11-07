@@ -101,75 +101,74 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+
+# Endpoint for esp to update data    
 @app.route('/update-data', methods=['POST'])
 def update_data():
     data = request.get_json()
 
-    if 'temperature' not in data or 'humidity' not in data:
-        return jsonify({'error': 'No temperature or humidity provided'}), 400
-    
+    # Check for required fields in JSON
+    required_fields = ['temperature', 'humidity', 'soil_moisture', 'potassium', 'phosphorus', 'nitrogen']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing field: {field}'}), 400
+
     try:
-        global temperature, humidity, moisture
+        # Update global variables
+        global temperature, humidity, moisture, potassium, phosphorus, nitrogen
         temperature = data['temperature']
         humidity = data['humidity']
         moisture = data['soil_moisture']
-        
+        potassium = data['potassium']
+        phosphorus = data['phosphorus']
+        nitrogen = data['nitrogen']
 
         # Emit data to frontend
-        socketio.emit('change-detected', {'new_temp': temperature, 'new_hum': humidity, 'new_moist': moisture})
-        
+        socketio.emit('change-detected', {
+            'new_temp': temperature,
+            'new_hum': humidity,
+            'new_moist': moisture,
+            'new_potassium': potassium,
+            'new_phosphorus': phosphorus,
+            'new_nitrogen': nitrogen
+        })
+
+        # URL to send the POST request
         url = 'https://sugoi-api.vercel.app/agri/update'
-        
+
         # Data to send in the POST request
-        data = {
-            "temperature":temperature,
-            "humidity":humidity,
-            "soil_moisture":moisture
+        data_to_send = {
+            "temperature": temperature,
+            "humidity": humidity,
+            "soil_moisture": moisture,
+            "potassium": potassium,
+            "phosphorus": phosphorus,
+            "nitrogen": nitrogen
         }
 
         # Send the POST request
-        response = requests.post(url, json=data)
+        response = requests.post(url, json=data_to_send)
+
         # Check the response
-        print(response.status_code)
+        print(f"Response status code: {response.status_code}")
+        print(f"New data received and emitted, temp: {temperature}, hum: {humidity}, moist: {moisture}, potassium: {potassium}, phosphorus: {phosphorus}, nitrogen: {nitrogen}")
 
-        print(f"New data received and emitted, temp: {temperature} hum: {humidity}, moist: {moisture}")
         return jsonify({'status': 'data received'}), 200
-    
+
     except Exception as e:
-        print(f"Exception occured: {e}")
+        print(f"Exception occurred: {e}")
         return jsonify({'error': str(e)}), 500
     
 
-@app.route('/update-npk', methods=['POST'])
-def update_npk_data():
-    data = request.get_json()
-
-    if 'Nitrogen' not in data or 'Phosphorus' not in data or 'Potassium' not in data:
-        return jsonify({'error': 'Missing values in the json received'}), 400
-    
-    try:
-        global nitrogen, phosphorus, potassium
-        nitrogen = data['Nitrogen']
-        phosphorus = data['Phosphorus']
-        potassium = data['Potassium']
-
-        # Emit data to frontend
-        socketio.emit('change-detected', {'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
-
-        print(f"New data received and emitted, nitogen: {nitrogen}, phosphorus: {phosphorus}, potassium: {potassium}")
-        return jsonify({'status': 'data received'}), 200
-    
-    except Exception as e:
-        print(f"Exception occured: {e}")
-        return jsonify({'error': str(e)}), 500
-    
-    
+# Endpoint for sending data to the website once called    
 @app.route('/fetch-data', methods=['GET'])
 def fetch_data():
     # Fetch data from global variables
     global temperature, humidity, moisture, nitrogen, phosphorus, potassium
     return jsonify({'temperature': temperature, 'humidity': humidity, 'moisture': moisture, 'nitrogen': nitrogen, 'phosphorus': phosphorus, 'potassium': potassium})
 
+
+# Endpoint to toggle the LED
 @app.route('/toggleLED', methods=['GET'])
 def toggleLED():
     # Define the LED toggle URL

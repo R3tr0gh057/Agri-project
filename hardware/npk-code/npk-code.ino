@@ -18,6 +18,13 @@ const char* password = "Todotodo";
 const char* tempServer = "http://192.168.193.55:5000/update-data";
 const char* npkServer = "http://192.168.193.55:5000/update-npk";
 
+int nitrogenValue = 0;
+int phosphorusValue = 0;
+int potassiumValue = 0;
+float temperature = 0;
+float humidity = 0;
+float soil_moisture = 0;
+
 // Modbus RTU requests for reading NPK values
 const byte nitro[] = {0x01, 0x03, 0x00, 0x1E, 0x00, 0x01, 0xE4, 0x0C};
 const byte phos[] = {0x01, 0x03, 0x00, 0x1F, 0x00, 0x01, 0xB5, 0xCC};
@@ -50,7 +57,7 @@ void setup() {
 void loop() {
 
   // Read Nitrogen (N)
-  int nitrogenValue = readSensor(nitro);
+  nitrogenValue = readSensor(nitro);
   Serial.print("Nitrogen: ");
   Serial.print(nitrogenValue);
   Serial.println(" mg/kg");
@@ -58,7 +65,7 @@ void loop() {
   delay(250);
 
   // Read Phosphorus (P)
-  int phosphorusValue = readSensor(phos);
+  phosphorusValue = readSensor(phos);
   Serial.print("Phosphorus: ");
   Serial.print(phosphorusValue);
   Serial.println(" mg/kg");
@@ -66,7 +73,7 @@ void loop() {
   delay(250);
 
   // Read Potassium (K)
-  int potassiumValue = readSensor(pota);
+  potassiumValue = readSensor(pota);
   Serial.print("Potassium: ");
   Serial.print(potassiumValue);
   Serial.println(" mg/kg");
@@ -77,35 +84,20 @@ void loop() {
   // Send the temperature and humidity data
   dth_read();
 
+  delay(250);
+
+  String jsonData = "{\"temperature\":" + String(temperature) +
+                  ",\"humidity\":" + String(humidity) +
+                  ",\"soil_moisture\":" + String(soil_moisture) +
+                  ",\"potassium\":" + String(potassiumValue) +
+                  ",\"phosphorus\":" + String(phosphorusValue) +
+                  ",\"nitrogen\":" + String(nitrogenValue) + "}";
+
+  sendData(tempServer, jsonData);
+
   delay(2000);  // Delay before next cycle
 
-  // Check WiFi connection before sending data
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(npkServer);
-    http.addHeader("Content-Type", "application/json");
 
-    String jsonData = "{\"Nitrogen\":" + String(nitrogenValue) + ",\"Phosphorus\":" + String(phosphorusValue) + ",\"Potassium\":" + String(potassiumValue) + "}";
-    Serial.println("Sending JSON payload:");
-    Serial.println(jsonData);
-
-    int httpResponseCode = http.POST(jsonData);
-
-    if (httpResponseCode > 0) {
-      String response = http.getString();  // Get response from server
-      Serial.print("HTTP Response code: ");
-      Serial.println(httpResponseCode);
-      Serial.println("Response from the npk server:");
-      Serial.println(response);
-    } else {
-      Serial.print("Error on sending POST to the npk server: ");
-      Serial.println(httpResponseCode);
-    }
-    delay(2000);
-    http.end();  // End the HTTP connection
-  } else {
-    Serial.println("Error in WiFi connection");
-  }
 }
 
 int readSensor(const byte *command) {
@@ -140,9 +132,9 @@ int readSensor(const byte *command) {
 }
 
 void dth_read() {
-  float temperature = dht.readTemperature(); 
-  float humidity = dht.readHumidity();
-  float soil_moisture = 55;
+  temperature = dht.readTemperature(); 
+  humidity = dht.readHumidity();
+  soil_moisture = 55;
 
   if (isnan(temperature) || isnan(humidity)) { 
       Serial.println("Failed to read from DHT sensor!");
@@ -151,18 +143,21 @@ void dth_read() {
 
   Serial.print("Temperature: ");
   Serial.print(temperature);
+  Serial.print("Soil Moisture: ");
+  Serial.print(soil_moisture);
   Serial.print(" °C, Humidity: ");
   Serial.print(humidity);
   Serial.println(" %");
+}
 
-   if (WiFi.status() == WL_CONNECTED) {
+void sendData(const String &address, const String &jsonData) {
+  if (WiFi.status() == WL_CONNECTED) {
       HTTPClient http;
-      http.begin(tempServer);
+      http.begin(address);
       http.addHeader("Content-Type", "application/json");
 
-      String jsonData = "{\"temperature\":" + String(temperature) + ",\"humidity\":" + String(humidity) + ",\"soil_moisture\":" + String(soil_moisture) + "}";
       int httpResponseCode = http.POST(jsonData);
-      Serial.print("Status of temperature endpoint: ");
+      Serial.print("Status of POST request: ");
       Serial.println(httpResponseCode);
 
       http.end();
