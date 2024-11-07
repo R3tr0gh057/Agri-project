@@ -28,7 +28,7 @@ fi
 
 # Start ngrok as a background process
 echo "Starting ngrok tunnel..."
-ngrok http --domain=bulldog-promoted-accurately.ngrok-free.app http://192.168.193.55:80 &
+ngrok http --domain=bulldog-promoted-accurately.ngrok-free.app http://192.168.193.55:5000 &
 
 # Wait for background processes to complete
 wait
