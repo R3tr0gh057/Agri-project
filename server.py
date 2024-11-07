@@ -96,7 +96,14 @@ def predict():
             3: 'Nitrogen defficiency'
         }
 
-        return jsonify({'predicted_class': predictions[predicted_class]})
+        descriptions = {
+            0: "Potassium deficiency: yellowing along leaf edges, brown spotting. As a remedy, apply potassium-rich fertilizers, avoid excessive watering.",
+            1: "Healthy plant with no deficiencies. As a remedy, maintain regular care practices, water and fertilize as needed.",
+            2: "Potassium and Nitrogen deficiency: yellowing edges, stunted growth, older leaves yellowing. As a remedy apply a balanced NPK fertilizer to address both deficiencies, and ensure adequate watering.",
+            3: "Nitrogen deficiency: yellowing of older leaves, slow growth. As a remedy, use nitrogen-rich fertilizers like compost or urea."
+        }
+
+        return jsonify({'predicted_class': predictions[predicted_class], 'desc': descriptions[predicted_class]})
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
