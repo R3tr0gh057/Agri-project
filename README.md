@@ -1,7 +1,7 @@
 
 ---
 
-# Agri-Project
+# Smart Agri App
 
 This repository contains a Flask server and web application designed for agriculture-related functionalities, such as image-based predictions, leveraging Python, ESP32 hardware, and HTML for UI.
 
